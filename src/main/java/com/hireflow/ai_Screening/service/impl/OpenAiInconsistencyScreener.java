@@ -21,8 +21,9 @@ public class OpenAiInconsistencyScreener implements InconsistencyScreener {
     private static final Set<String> ALLOWED_SEVERITY = Set.of("LOW", "MEDIUM", "HIGH");
 
     private static final String SYSTEM_PROMPT = """
-            You detect inconsistencies between an applicant's claims and their available evidence (resume summary,
-            applicant skills, technical answers vs the expected answer guides).
+            You detect inconsistencies between an applicant's claimed skills and their resume summary.
+            Use ONLY the resume summary as evidence — do NOT request, infer, or evaluate technical question answers.
+            Q&A is reserved for human reviewers and is intentionally not provided.
             Do NOT recommend rejection. Inconsistency is a review flag, not a rejection rule.
             Reply with ONLY a JSON object using exactly these keys:
               "score" (integer 0-100, higher = more inconsistency risk),
@@ -39,8 +40,7 @@ public class OpenAiInconsistencyScreener implements InconsistencyScreener {
     public InconsistencyReviewCompletedEvent detect(ApplicationSubmittedEvent event) {
         try {
             String userPrompt = OpenAiPromptFactory.jobContext(event)
-                    + OpenAiPromptFactory.applicantContext(event)
-                    + OpenAiPromptFactory.answersBlock(event);
+                    + OpenAiPromptFactory.applicantContext(event);
 
             JsonNode root = chatClient.completeJson(SYSTEM_PROMPT, userPrompt);
             Integer aiScore = OpenAiResponseSupport.clampedScore(root, "score");

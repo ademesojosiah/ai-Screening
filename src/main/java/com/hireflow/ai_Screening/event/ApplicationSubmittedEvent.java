@@ -5,7 +5,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -28,5 +27,4 @@ public class ApplicationSubmittedEvent {
     private List<String> applicantSkills;
     private Integer autoRejectThreshold;
     private Integer autoPassThreshold;
-    private List<ApplicationSubmittedAnswer> answers = new ArrayList<>();
 }

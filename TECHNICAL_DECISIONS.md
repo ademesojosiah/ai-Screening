@@ -117,12 +117,13 @@ Job posters need to define role-specific technical questions so candidates are a
 - Admins and hiring managers can add simple technical questions while creating or updating a job.
 - Each job question stores:
   - `question` - candidate-facing prompt
-  - `answer` - internal guide for HR/future AI grading
+  - `answer` - internal guide for HR (human-only)
+- **AI Screening never receives applicant Q&A.** The `ApplicationSubmittedEvent` carries job context, job skills, applicant skills, and resume summary only. Answers stay in the Application Service database and are returned to HR through `GET /api/v1/applications/{id}`.
 
 ### Technical Direction
 
 - Keep the current job-question model basic.
-- Add applicant answers only when the assessment flow is introduced.
+- Q&A is a human-review section by design. Resist any future change that would forward applicant answers into the AI pipeline; that boundary is what keeps screening explainable.
 - Add AI-suggested questions, rubrics, timers, or question versioning only when product requirements need them.
 
 ---
@@ -172,7 +173,7 @@ Hiring teams need fast resume screening, but candidates should not be rejected b
   - project consistency score, explanation, and review
   - inconsistency risk score, severity, explanation, review, and recommended human-review action
 - The Application Service stores those fields in `AiScreeningResult`.
-- Only `matchPercentage` is used for automatic threshold movement.
+- `matchPercentage` is informational only. The AI screening service does NOT auto-advance or auto-reject any application. The Application Service uses it to derive a `ScreeningRecommendation` flag (`AUTO_PASS` / `MANUAL_REVIEW` / `AUTO_REJECT` / `PENDING`) that HR uses to filter the applicant list. Stage transitions remain a human decision.
 
 - Add stronger parsing for projects, certifications, tools, seniority, and role-specific experience.
 - Compare resume claims directly against job requirements.
@@ -205,8 +206,7 @@ Applicants may list projects that do not align with their claimed skills, senior
   - project descriptions that do not mention the claimed stack
   - repeated vague project wording
   - projects unrelated to the target role
-- Ask applicants follow-up technical questions about listed projects during assessment.
-- Current basic implementation approximates project consistency from available resume summary/profile evidence until structured project extraction exists.
+- Current basic implementation approximates project consistency from the **resume summary only**. Applicant Q&A answers are intentionally excluded from this screener; Q&A is reserved for HR review (`BasicProjectConsistencyScreener` and `OpenAiProjectConsistencyScreener` both read only `resumeSummary`).
 
 ### Technical Direction
 
@@ -249,19 +249,15 @@ AI can help detect inconsistencies across resumes, assessments, interviews, and 
 - AI screening explains matched and unmatched skills.
 - No full cross-source inconsistency score is currently documented.
 
-- Compare claims across:
-  - resume
-  - applicant profile
-  - project descriptions
-  - assessment answers
-  - interview feedback
-  - optional GitHub signals
+- Compare claims across (AI scope, current build):
+  - claimed applicant skills
+  - resume summary
+- Q&A answers and interview feedback are explicitly **out of scope** for the AI inconsistency screener — those signals are reviewed by humans.
 - Flag contradictions such as:
-  - claiming a framework but failing basic questions about it
-  - listing a project stack that does not appear in the project explanation
-  - GitHub repositories that do not support claimed public project work
+  - claiming a framework not mentioned anywhere in the resume
+  - claimed senior-level stack appearing nowhere in the resume
 - Show inconsistency as a review flag, not an automatic rejection.
-- Current basic implementation emits inconsistency risk as a review flag in `ScreeningCompletedEvent`.
+- Current basic implementation emits inconsistency risk as a review flag in `InconsistencyReviewCompletedEvent` and is rolled into the final `AiScreeningResult` by the Application Service.
 
 ### Technical Direction
 

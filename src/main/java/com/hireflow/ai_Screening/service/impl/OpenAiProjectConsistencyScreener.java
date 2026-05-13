@@ -17,11 +17,11 @@ import org.springframework.stereotype.Service;
 public class OpenAiProjectConsistencyScreener implements ProjectConsistencyScreener {
 
     private static final String SYSTEM_PROMPT = """
-            You score whether the applicant's project evidence supports their claimed skills and the job's required stack.
-            Use the resume summary and the applicant's technical answers as evidence. Do not reject for missing evidence —
-            flag it as weak and require human review.
+            You score whether the applicant's resume evidence supports their claimed skills and the job's required stack.
+            Use ONLY the resume summary as evidence. Do not request, infer, or evaluate technical question answers — those
+            are reserved for human reviewers. Do not reject for missing evidence — flag it as weak and require human review.
             Reply with ONLY a JSON object using exactly these keys:
-              "score" (integer 0-100, 100 = projects clearly support required skills at expected seniority),
+              "score" (integer 0-100, 100 = resume clearly supports required skills at expected seniority),
               "explanation" (concise candidate-neutral explanation, max 600 chars),
               "review" (internal HR review note, max 600 chars).
             """;
@@ -33,8 +33,7 @@ public class OpenAiProjectConsistencyScreener implements ProjectConsistencyScree
     public ProjectConsistencyCompletedEvent score(ApplicationSubmittedEvent event) {
         try {
             String userPrompt = OpenAiPromptFactory.jobContext(event)
-                    + OpenAiPromptFactory.applicantContext(event)
-                    + OpenAiPromptFactory.answersBlock(event);
+                    + OpenAiPromptFactory.applicantContext(event);
 
             JsonNode root = chatClient.completeJson(SYSTEM_PROMPT, userPrompt);
             Integer aiScore = OpenAiResponseSupport.clampedScore(root, "score");

@@ -1,7 +1,5 @@
 package com.hireflow.ai_Screening.service.impl;
 
-import com.hireflow.ai_Screening.event.ApplicationSubmittedAnswer;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -32,19 +30,6 @@ final class ScreeningAnalysisSupport {
 
     static boolean containsNormalized(String text, String value) {
         return normalize(text).contains(normalize(value));
-    }
-
-    static String combineEvidence(String resumeSummary, List<ApplicationSubmittedAnswer> answers) {
-        StringBuilder builder = new StringBuilder();
-        if (resumeSummary != null) {
-            builder.append(resumeSummary);
-        }
-        for (ApplicationSubmittedAnswer answer : safeList(answers)) {
-            if (answer != null && answer.getApplicantAnswer() != null) {
-                builder.append(' ').append(answer.getApplicantAnswer());
-            }
-        }
-        return builder.toString();
     }
 
     static Set<String> significantTokens(String value) {

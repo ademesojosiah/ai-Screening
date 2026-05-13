@@ -1,6 +1,5 @@
 package com.hireflow.ai_Screening.service.impl;
 
-import com.hireflow.ai_Screening.event.ApplicationSubmittedAnswer;
 import com.hireflow.ai_Screening.event.ApplicationSubmittedEvent;
 import com.hireflow.ai_Screening.event.ProjectConsistencyCompletedEvent;
 import org.junit.jupiter.api.DisplayName;
@@ -69,22 +68,18 @@ class BasicProjectConsistencyScreenerTest {
     }
 
     @Test
-    @DisplayName("Should find a skill present only in applicant answer text")
-    void score_skillsInAnswerText() {
-        ApplicationSubmittedAnswer answer = new ApplicationSubmittedAnswer(
-                "q1", "Describe your Kafka experience",
-                "Mention consumer group patterns",
-                "I built Kafka consumer groups in a high-throughput pipeline"
-        );
+    @DisplayName("Should ignore Q&A answers — only the resume summary is used as evidence")
+    void score_ignoresAnswers() {
+        // Skill not in resume but mentioned in an answer-like field should NOT count.
+        // The screener no longer reads answers; Q&A is reserved for human reviewers.
         ApplicationSubmittedEvent event = new ApplicationSubmittedEvent();
         event.setApplicationId("application-1");
         event.setJobSkills(List.of("Kafka"));
-        event.setResumeSummary(null);
-        event.setAnswers(List.of(answer));
+        event.setResumeSummary("Frontend engineer with no streaming experience");
 
         ProjectConsistencyCompletedEvent result = screener.score(event);
 
-        assertThat(result.getScore()).isEqualTo(100);
+        assertThat(result.getScore()).isEqualTo(0);
     }
 
     @Test

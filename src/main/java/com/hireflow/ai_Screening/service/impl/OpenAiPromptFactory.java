@@ -1,6 +1,5 @@
 package com.hireflow.ai_Screening.service.impl;
 
-import com.hireflow.ai_Screening.event.ApplicationSubmittedAnswer;
 import com.hireflow.ai_Screening.event.ApplicationSubmittedEvent;
 
 import java.util.List;
@@ -23,23 +22,6 @@ final class OpenAiPromptFactory {
         StringBuilder builder = new StringBuilder();
         builder.append("APPLICANT SKILLS: ").append(joinSkills(event.getApplicantSkills())).append('\n');
         builder.append("RESUME SUMMARY: ").append(nullSafe(event.getResumeSummary())).append('\n');
-        return builder.toString();
-    }
-
-    static String answersBlock(ApplicationSubmittedEvent event) {
-        List<ApplicationSubmittedAnswer> answers = event.getAnswers();
-        if (answers == null || answers.isEmpty()) {
-            return "TECHNICAL ANSWERS: (none submitted)\n";
-        }
-        StringBuilder builder = new StringBuilder();
-        builder.append("TECHNICAL ANSWERS:\n");
-        int index = 1;
-        for (ApplicationSubmittedAnswer answer : answers) {
-            if (answer == null) continue;
-            builder.append(index++).append(". Q: ").append(nullSafe(answer.getQuestion())).append('\n');
-            builder.append("   EXPECTED GUIDE: ").append(nullSafe(answer.getExpectedAnswerGuide())).append('\n');
-            builder.append("   APPLICANT ANSWER: ").append(nullSafe(answer.getApplicantAnswer())).append('\n');
-        }
         return builder.toString();
     }
 

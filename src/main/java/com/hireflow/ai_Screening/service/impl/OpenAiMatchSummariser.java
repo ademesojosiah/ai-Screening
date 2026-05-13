@@ -20,7 +20,9 @@ public class OpenAiMatchSummariser implements MatchSummariser {
 
     private static final String SYSTEM_PROMPT = """
             You are summarising the overall match between an applicant and the job's required skills.
-            Only matched/unmatched skills and matchPercentage drive automatic stage decisions, so be careful and conservative.
+            Use ONLY the resume summary and applicant skills as evidence — Q&A is reserved for human reviewers
+            and is intentionally not provided.
+            matchPercentage is informational only; it surfaces a recommendation but does not auto-advance the candidate.
             Reply with ONLY a JSON object using exactly these keys:
               "matchPercentage" (integer 0-100, share of required skills the applicant credibly demonstrates),
               "matchedSkills" (array of strings, subset of the job's required skills the applicant demonstrably has),
@@ -35,8 +37,7 @@ public class OpenAiMatchSummariser implements MatchSummariser {
     public ScreeningCompletedEvent summarise(ApplicationSubmittedEvent event) {
         try {
             String userPrompt = OpenAiPromptFactory.jobContext(event)
-                    + OpenAiPromptFactory.applicantContext(event)
-                    + OpenAiPromptFactory.answersBlock(event);
+                    + OpenAiPromptFactory.applicantContext(event);
 
             JsonNode root = chatClient.completeJson(SYSTEM_PROMPT, userPrompt);
             Integer matchPercentage = OpenAiResponseSupport.clampedScore(root, "matchPercentage");
