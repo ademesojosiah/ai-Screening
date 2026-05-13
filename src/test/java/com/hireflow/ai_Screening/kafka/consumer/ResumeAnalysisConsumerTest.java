@@ -16,8 +16,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
@@ -59,7 +59,7 @@ class ResumeAnalysisConsumerTest {
                 .isInstanceOf(RuntimeException.class)
                 .hasMessage("OpenAI timeout");
 
-        verify(kafkaTemplate, never()).send(RESULT_TOPIC, "application-1", null);
+        verifyNoInteractions(kafkaTemplate);
     }
 
     private ApplicationSubmittedEvent submittedEvent() {

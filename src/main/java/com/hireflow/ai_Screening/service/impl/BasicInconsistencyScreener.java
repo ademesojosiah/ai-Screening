@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Set;
 
 import static com.hireflow.ai_Screening.service.impl.ScreeningAnalysisSupport.combineEvidence;
-import static com.hireflow.ai_Screening.service.impl.ScreeningAnalysisSupport.containsNormalized;
+import static com.hireflow.ai_Screening.service.impl.ScreeningAnalysisSupport.evidenceSupportsSkill;
 import static com.hireflow.ai_Screening.service.impl.ScreeningAnalysisSupport.isBlank;
 import static com.hireflow.ai_Screening.service.impl.ScreeningAnalysisSupport.normalize;
 import static com.hireflow.ai_Screening.service.impl.ScreeningAnalysisSupport.safeList;
@@ -51,7 +51,7 @@ public class BasicInconsistencyScreener implements InconsistencyScreener {
         if (isBlank(evidence)) {
             return 0;
         }
-        long unsupported = applicantSkills.stream().filter(skill -> !containsNormalized(evidence, skill)).count();
+        long unsupported = applicantSkills.stream().filter(skill -> !evidenceSupportsSkill(evidence, skill)).count();
         return (int) Math.round((unsupported * 100.0) / applicantSkills.size());
     }
 

@@ -6,7 +6,6 @@ import com.hireflow.ai_Screening.config.OpenAiProperties;
 import com.hireflow.ai_Screening.restclient.OpenAiChatClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
@@ -15,7 +14,6 @@ import java.util.Map;
 
 @Slf4j
 @Component
-@ConditionalOnProperty(prefix = "hireflow.ai.openai", name = "enabled", havingValue = "true")
 public class SpringOpenAiChatClient implements OpenAiChatClient {
 
     private final RestClient restClient;

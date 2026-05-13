@@ -7,14 +7,12 @@ import com.hireflow.ai_Screening.restclient.OpenAiChatClient;
 import com.hireflow.ai_Screening.service.ProjectConsistencyScreener;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
 @Slf4j
 @Primary
 @Service
-@ConditionalOnProperty(prefix = "hireflow.ai.openai", name = "enabled", havingValue = "true")
 @RequiredArgsConstructor
 public class OpenAiProjectConsistencyScreener implements ProjectConsistencyScreener {
 

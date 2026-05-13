@@ -59,4 +59,20 @@ final class ScreeningAnalysisSupport {
         }
         return tokens;
     }
+
+    /**
+     * Token-safe skill lookup: splits both evidence and skill into word tokens so that
+     * "Java" does not falsely match inside "JavaScript", and multi-word skills like
+     * "Spring Boot" require both tokens to be present.
+     * Falls back to substring matching for very short skills whose tokens are empty (e.g. "Go").
+     */
+    static boolean evidenceSupportsSkill(String evidence, String skill) {
+        if (isBlank(evidence) || isBlank(skill)) return false;
+        Set<String> evidenceTokens = significantTokens(normalize(evidence));
+        Set<String> skillTokens = significantTokens(normalize(skill));
+        if (skillTokens.isEmpty()) {
+            return containsNormalized(evidence, skill);
+        }
+        return evidenceTokens.containsAll(skillTokens);
+    }
 }

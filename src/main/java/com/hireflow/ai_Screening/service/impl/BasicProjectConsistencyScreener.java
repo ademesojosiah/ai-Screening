@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 import static com.hireflow.ai_Screening.service.impl.ScreeningAnalysisSupport.combineEvidence;
-import static com.hireflow.ai_Screening.service.impl.ScreeningAnalysisSupport.containsNormalized;
+import static com.hireflow.ai_Screening.service.impl.ScreeningAnalysisSupport.evidenceSupportsSkill;
 import static com.hireflow.ai_Screening.service.impl.ScreeningAnalysisSupport.isBlank;
 import static com.hireflow.ai_Screening.service.impl.ScreeningAnalysisSupport.safeList;
 
@@ -33,7 +33,7 @@ public class BasicProjectConsistencyScreener implements ProjectConsistencyScreen
         if (jobSkills.isEmpty() || isBlank(evidence)) {
             return 50;
         }
-        long supported = jobSkills.stream().filter(skill -> containsNormalized(evidence, skill)).count();
+        long supported = jobSkills.stream().filter(skill -> evidenceSupportsSkill(evidence, skill)).count();
         return (int) Math.round((supported * 100.0) / jobSkills.size());
     }
 

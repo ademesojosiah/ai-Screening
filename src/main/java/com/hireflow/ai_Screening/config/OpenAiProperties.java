@@ -9,7 +9,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "hireflow.ai.openai")
 public class OpenAiProperties {
 
-    private boolean enabled = false;
+    private boolean enabled = true;
     private String apiKey;
     private String baseUrl = "https://api.openai.com/v1";
     private String model = "gpt-4o-mini";

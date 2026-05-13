@@ -1,6 +1,5 @@
 package com.hireflow.ai_Screening.config;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,7 +13,6 @@ import java.time.Duration;
 
 @Configuration
 @EnableConfigurationProperties(OpenAiProperties.class)
-@ConditionalOnProperty(prefix = "hireflow.ai.openai", name = "enabled", havingValue = "true")
 public class OpenAiConfig {
 
     @Bean(name = "openAiRestClient")
