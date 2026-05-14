@@ -120,4 +120,81 @@ class BasicProjectConsistencyScreenerTest {
 
         assertThat(result.getScore()).isEqualTo(100);
     }
+
+    @Test
+    @DisplayName("Should match skill regardless of case in resume evidence")
+    void score_caseInsensitiveMatch() {
+        ApplicationSubmittedEvent event = new ApplicationSubmittedEvent();
+        event.setApplicationId("application-1");
+        event.setJobSkills(List.of("Java"));
+        event.setResumeSummary("BACKEND ENGINEER WITH JAVA EXPERIENCE");
+
+        assertThat(screener.score(event).getScore()).isEqualTo(100);
+    }
+
+    @Test
+    @DisplayName("Should emit a positive review note when project evidence aligns (score >= 70)")
+    void score_reviewWhenAligned() {
+        ApplicationSubmittedEvent event = new ApplicationSubmittedEvent();
+        event.setApplicationId("application-1");
+        event.setJobSkills(List.of("Java", "Kafka"));
+        event.setResumeSummary("Backend engineer with Java and Kafka in production");
+
+        ProjectConsistencyCompletedEvent result = screener.score(event);
+
+        assertThat(result.getScore()).isEqualTo(100);
+        assertThat(result.getReview()).isEqualTo("Resume evidence appears aligned with the target role.");
+    }
+
+    @Test
+    @DisplayName("Should ask for human review at the middle tier (40 <= score < 70)")
+    void score_reviewAtMidTier() {
+        // 1 of 2 matched → 50
+        ApplicationSubmittedEvent event = new ApplicationSubmittedEvent();
+        event.setApplicationId("application-1");
+        event.setJobSkills(List.of("Java", "Kafka"));
+        event.setResumeSummary("Backend engineer with Java experience");
+
+        ProjectConsistencyCompletedEvent result = screener.score(event);
+
+        assertThat(result.getScore()).isEqualTo(50);
+        assertThat(result.getReview()).contains("human review");
+    }
+
+    @Test
+    @DisplayName("Should flag weak evidence at the low tier (score < 40)")
+    void score_reviewAtLowTier() {
+        // 0 of 3 matched → 0
+        ApplicationSubmittedEvent event = new ApplicationSubmittedEvent();
+        event.setApplicationId("application-1");
+        event.setJobSkills(List.of("Kafka", "Kubernetes", "Terraform"));
+        event.setResumeSummary("Junior frontend developer");
+
+        ProjectConsistencyCompletedEvent result = screener.score(event);
+
+        assertThat(result.getScore()).isEqualTo(0);
+        assertThat(result.getReview()).contains("weak or missing");
+    }
+
+    @Test
+    @DisplayName("Should explain that evidence comes from the resume only when answers are absent")
+    void score_explanationReflectsResumeOnly() {
+        ApplicationSubmittedEvent event = new ApplicationSubmittedEvent();
+        event.setApplicationId("application-1");
+        event.setJobSkills(List.of("Java"));
+        event.setResumeSummary("Java backend engineer");
+
+        assertThat(screener.score(event).getExplanation()).contains("resume summary");
+    }
+
+    @Test
+    @DisplayName("Should preserve the application id on the result event")
+    void score_carriesApplicationId() {
+        ApplicationSubmittedEvent event = new ApplicationSubmittedEvent();
+        event.setApplicationId("custom-app-id-42");
+        event.setJobSkills(List.of("Java"));
+        event.setResumeSummary("Java engineer");
+
+        assertThat(screener.score(event).getApplicationId()).isEqualTo("custom-app-id-42");
+    }
 }

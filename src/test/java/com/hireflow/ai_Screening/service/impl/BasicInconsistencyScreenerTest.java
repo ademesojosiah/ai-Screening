@@ -98,4 +98,74 @@ class BasicInconsistencyScreenerTest {
         assertThat(result.getScore()).isEqualTo(100);
         assertThat(result.getSeverity()).isEqualTo("HIGH");
     }
+
+    @Test
+    @DisplayName("Should require all tokens of a multi-word skill to appear in the resume")
+    void detect_multiWordSkillRequiresAllTokens() {
+        // Resume mentions "Spring" but not "Boot" — claim is unsupported.
+        ApplicationSubmittedEvent event = new ApplicationSubmittedEvent();
+        event.setApplicationId("application-1");
+        event.setApplicantSkills(List.of("Spring Boot"));
+        event.setResumeSummary("Backend engineer with Spring and Hibernate experience");
+
+        InconsistencyReviewCompletedEvent result = screener.detect(event);
+
+        assertThat(result.getScore()).isEqualTo(100);
+        assertThat(result.getSeverity()).isEqualTo("HIGH");
+    }
+
+    @Test
+    @DisplayName("Should pick LOW just below the MEDIUM boundary (score 39)")
+    void detect_lowSeverityUpperBoundary() {
+        // 1 of 3 unsupported → round(33) = 33 → LOW (under 40)
+        ApplicationSubmittedEvent event = new ApplicationSubmittedEvent();
+        event.setApplicationId("application-1");
+        event.setApplicantSkills(List.of("Java", "Kafka", "Python"));
+        event.setResumeSummary("Backend engineer working with Java and Kafka");
+
+        InconsistencyReviewCompletedEvent result = screener.detect(event);
+
+        assertThat(result.getScore()).isEqualTo(33);
+        assertThat(result.getSeverity()).isEqualTo("LOW");
+    }
+
+    @Test
+    @DisplayName("Should surface a distinct recommended action for each severity tier")
+    void detect_recommendedActionVariesBySeverity() {
+        InconsistencyReviewCompletedEvent low = screener.detect(eventWith(List.of("Java"), "Java developer"));
+        InconsistencyReviewCompletedEvent medium = screener.detect(eventWith(
+                List.of("Java", "Kafka"), "Java engineer"));
+        InconsistencyReviewCompletedEvent high = screener.detect(eventWith(
+                List.of("Java", "Kafka", "Kubernetes", "Terraform"), "Java developer"));
+
+        assertThat(low.getSeverity()).isEqualTo("LOW");
+        assertThat(medium.getSeverity()).isEqualTo("MEDIUM");
+        assertThat(high.getSeverity()).isEqualTo("HIGH");
+
+        // Each tier must give HR a distinct action — proves the switch wiring is correct.
+        assertThat(low.getRecommendedHumanReviewAction())
+                .isNotEqualTo(medium.getRecommendedHumanReviewAction())
+                .isNotEqualTo(high.getRecommendedHumanReviewAction());
+        assertThat(medium.getRecommendedHumanReviewAction())
+                .isNotEqualTo(high.getRecommendedHumanReviewAction());
+    }
+
+    @Test
+    @DisplayName("Should preserve the application id on the result event")
+    void detect_carriesApplicationId() {
+        ApplicationSubmittedEvent event = new ApplicationSubmittedEvent();
+        event.setApplicationId("custom-app-id-42");
+        event.setApplicantSkills(List.of("Java"));
+        event.setResumeSummary("Java engineer");
+
+        assertThat(screener.detect(event).getApplicationId()).isEqualTo("custom-app-id-42");
+    }
+
+    private ApplicationSubmittedEvent eventWith(List<String> applicantSkills, String resumeSummary) {
+        ApplicationSubmittedEvent event = new ApplicationSubmittedEvent();
+        event.setApplicationId("application-1");
+        event.setApplicantSkills(applicantSkills);
+        event.setResumeSummary(resumeSummary);
+        return event;
+    }
 }
