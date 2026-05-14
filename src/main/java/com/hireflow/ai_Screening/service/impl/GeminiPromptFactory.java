@@ -4,9 +4,9 @@ import com.hireflow.ai_Screening.event.ApplicationSubmittedEvent;
 
 import java.util.List;
 
-final class OpenAiPromptFactory {
+final class GeminiPromptFactory {
 
-    private OpenAiPromptFactory() {}
+    private GeminiPromptFactory() {}
 
     static String jobContext(ApplicationSubmittedEvent event) {
         StringBuilder builder = new StringBuilder();

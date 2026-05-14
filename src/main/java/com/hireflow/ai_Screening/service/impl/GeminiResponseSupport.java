@@ -5,14 +5,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.util.ArrayList;
 import java.util.List;
 
-final class OpenAiResponseSupport {
+final class GeminiResponseSupport {
 
-    private OpenAiResponseSupport() {}
+    private GeminiResponseSupport() {}
 
     static Integer clampedScore(JsonNode root, String field) {
         JsonNode node = root.get(field);
         if (node == null || node.isNull() || !node.canConvertToInt()) {
-            throw new IllegalArgumentException("Missing or non-integer '" + field + "' in OpenAI response");
+            throw new IllegalArgumentException("Missing or non-integer '" + field + "' in AI provider response");
         }
         int value = node.asInt();
         if (value < 0) value = 0;
@@ -23,11 +23,11 @@ final class OpenAiResponseSupport {
     static String requireText(JsonNode root, String field) {
         JsonNode node = root.get(field);
         if (node == null || node.isNull()) {
-            throw new IllegalArgumentException("Missing '" + field + "' in OpenAI response");
+            throw new IllegalArgumentException("Missing '" + field + "' in AI provider response");
         }
         String value = node.asText("").trim();
         if (value.isEmpty()) {
-            throw new IllegalArgumentException("Empty '" + field + "' in OpenAI response");
+            throw new IllegalArgumentException("Empty '" + field + "' in AI provider response");
         }
         return value;
     }

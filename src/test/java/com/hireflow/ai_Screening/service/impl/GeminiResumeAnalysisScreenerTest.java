@@ -3,8 +3,8 @@ package com.hireflow.ai_Screening.service.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hireflow.ai_Screening.event.ApplicationSubmittedEvent;
 import com.hireflow.ai_Screening.event.ResumeAnalysisCompletedEvent;
-import com.hireflow.ai_Screening.restclient.OpenAiChatClient;
-import com.hireflow.ai_Screening.restclient.impl.OpenAiChatException;
+import com.hireflow.ai_Screening.restclient.GeminiChatClient;
+import com.hireflow.ai_Screening.restclient.impl.GeminiChatException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -15,15 +15,15 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class OpenAiResumeAnalysisScreenerTest {
+class GeminiResumeAnalysisScreenerTest {
 
     private final ObjectMapper mapper = new ObjectMapper();
     private final BasicResumeAnalysisScreener fallback = new BasicResumeAnalysisScreener();
 
     @Test
-    @DisplayName("Should map OpenAI response into the resume analysis event and clamp the score")
-    void analyze_parsesOpenAiResponse() throws Exception {
-        OpenAiChatClient chatClient = mock(OpenAiChatClient.class);
+    @DisplayName("Should map AI provider response into the resume analysis event and clamp the score")
+    void analyze_parsesGeminiResponse() throws Exception {
+        GeminiChatClient chatClient = mock(GeminiChatClient.class);
         when(chatClient.completeJson(anyString(), anyString())).thenReturn(mapper.readTree("""
                 {
                   "score": 142,
@@ -32,7 +32,7 @@ class OpenAiResumeAnalysisScreenerTest {
                 }
                 """));
 
-        OpenAiResumeAnalysisScreener screener = new OpenAiResumeAnalysisScreener(chatClient, fallback);
+        GeminiResumeAnalysisScreener screener = new GeminiResumeAnalysisScreener(chatClient, fallback);
 
         ResumeAnalysisCompletedEvent result = screener.analyze(event());
 
@@ -43,13 +43,13 @@ class OpenAiResumeAnalysisScreenerTest {
     }
 
     @Test
-    @DisplayName("Should fall back to the deterministic basic screener when OpenAI fails")
+    @DisplayName("Should fall back to the deterministic basic screener when Gemini fails")
     void analyze_fallsBackOnError() {
-        OpenAiChatClient chatClient = mock(OpenAiChatClient.class);
+        GeminiChatClient chatClient = mock(GeminiChatClient.class);
         when(chatClient.completeJson(anyString(), anyString()))
-                .thenThrow(new OpenAiChatException("provider unavailable"));
+                .thenThrow(new GeminiChatException("provider unavailable"));
 
-        OpenAiResumeAnalysisScreener screener = new OpenAiResumeAnalysisScreener(chatClient, fallback);
+        GeminiResumeAnalysisScreener screener = new GeminiResumeAnalysisScreener(chatClient, fallback);
 
         ResumeAnalysisCompletedEvent result = screener.analyze(event());
 
@@ -59,14 +59,14 @@ class OpenAiResumeAnalysisScreenerTest {
     }
 
     @Test
-    @DisplayName("Should fall back when OpenAI returns a payload that is missing required fields")
+    @DisplayName("Should fall back when Gemini returns a payload that is missing required fields")
     void analyze_fallsBackOnMalformedPayload() throws Exception {
-        OpenAiChatClient chatClient = mock(OpenAiChatClient.class);
+        GeminiChatClient chatClient = mock(GeminiChatClient.class);
         when(chatClient.completeJson(anyString(), anyString())).thenReturn(mapper.readTree("""
                 { "score": 80 }
                 """));
 
-        OpenAiResumeAnalysisScreener screener = new OpenAiResumeAnalysisScreener(chatClient, fallback);
+        GeminiResumeAnalysisScreener screener = new GeminiResumeAnalysisScreener(chatClient, fallback);
 
         ResumeAnalysisCompletedEvent result = screener.analyze(event());
 

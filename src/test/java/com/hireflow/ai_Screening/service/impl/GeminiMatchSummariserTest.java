@@ -3,8 +3,8 @@ package com.hireflow.ai_Screening.service.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hireflow.ai_Screening.event.ApplicationSubmittedEvent;
 import com.hireflow.ai_Screening.event.ScreeningCompletedEvent;
-import com.hireflow.ai_Screening.restclient.OpenAiChatClient;
-import com.hireflow.ai_Screening.restclient.impl.OpenAiChatException;
+import com.hireflow.ai_Screening.restclient.GeminiChatClient;
+import com.hireflow.ai_Screening.restclient.impl.GeminiChatException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -15,15 +15,15 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class OpenAiMatchSummariserTest {
+class GeminiMatchSummariserTest {
 
     private final ObjectMapper mapper = new ObjectMapper();
     private final BasicMatchSummariser fallback = new BasicMatchSummariser();
 
     @Test
-    @DisplayName("Should map all 4 OpenAI response fields into the screening completed event")
+    @DisplayName("Should map all 4 AI provider response fields into the screening completed event")
     void summarise_parsesAllFields() throws Exception {
-        OpenAiChatClient chatClient = mock(OpenAiChatClient.class);
+        GeminiChatClient chatClient = mock(GeminiChatClient.class);
         when(chatClient.completeJson(anyString(), anyString())).thenReturn(mapper.readTree("""
                 {
                   "matchPercentage": 75,
@@ -32,7 +32,7 @@ class OpenAiMatchSummariserTest {
                   "aiNarrativeSummary": "Strong backend candidate with Kafka experience."
                 }
                 """));
-        OpenAiMatchSummariser summariser = new OpenAiMatchSummariser(chatClient, fallback);
+        GeminiMatchSummariser summariser = new GeminiMatchSummariser(chatClient, fallback);
 
         ScreeningCompletedEvent result = summariser.summarise(event());
 
@@ -46,7 +46,7 @@ class OpenAiMatchSummariserTest {
     @Test
     @DisplayName("Should clamp a matchPercentage above 100 down to 100")
     void summarise_clampsMatchPercentageAbove100() throws Exception {
-        OpenAiChatClient chatClient = mock(OpenAiChatClient.class);
+        GeminiChatClient chatClient = mock(GeminiChatClient.class);
         when(chatClient.completeJson(anyString(), anyString())).thenReturn(mapper.readTree("""
                 {
                   "matchPercentage": 999,
@@ -55,15 +55,15 @@ class OpenAiMatchSummariserTest {
                   "aiNarrativeSummary": "Perfect match."
                 }
                 """));
-        OpenAiMatchSummariser summariser = new OpenAiMatchSummariser(chatClient, fallback);
+        GeminiMatchSummariser summariser = new GeminiMatchSummariser(chatClient, fallback);
 
         assertThat(summariser.summarise(event()).getMatchPercentage()).isEqualTo(100);
     }
 
     @Test
-    @DisplayName("Should handle empty skill arrays from OpenAI without throwing")
+    @DisplayName("Should handle empty skill arrays from Gemini without throwing")
     void summarise_emptySkillArrays() throws Exception {
-        OpenAiChatClient chatClient = mock(OpenAiChatClient.class);
+        GeminiChatClient chatClient = mock(GeminiChatClient.class);
         when(chatClient.completeJson(anyString(), anyString())).thenReturn(mapper.readTree("""
                 {
                   "matchPercentage": 0,
@@ -72,7 +72,7 @@ class OpenAiMatchSummariserTest {
                   "aiNarrativeSummary": "No skills matched."
                 }
                 """));
-        OpenAiMatchSummariser summariser = new OpenAiMatchSummariser(chatClient, fallback);
+        GeminiMatchSummariser summariser = new GeminiMatchSummariser(chatClient, fallback);
 
         ScreeningCompletedEvent result = summariser.summarise(event());
 
@@ -82,12 +82,12 @@ class OpenAiMatchSummariserTest {
     }
 
     @Test
-    @DisplayName("Should fall back to deterministic summariser when OpenAI call fails")
+    @DisplayName("Should fall back to deterministic summariser when AI provider call fails")
     void summarise_fallsBackOnApiError() {
-        OpenAiChatClient chatClient = mock(OpenAiChatClient.class);
+        GeminiChatClient chatClient = mock(GeminiChatClient.class);
         when(chatClient.completeJson(anyString(), anyString()))
-                .thenThrow(new OpenAiChatException("timeout"));
-        OpenAiMatchSummariser summariser = new OpenAiMatchSummariser(chatClient, fallback);
+                .thenThrow(new GeminiChatException("timeout"));
+        GeminiMatchSummariser summariser = new GeminiMatchSummariser(chatClient, fallback);
 
         ScreeningCompletedEvent result = summariser.summarise(event());
 
@@ -96,13 +96,13 @@ class OpenAiMatchSummariserTest {
     }
 
     @Test
-    @DisplayName("Should fall back when OpenAI returns a payload missing required fields")
+    @DisplayName("Should fall back when Gemini returns a payload missing required fields")
     void summarise_fallsBackOnMalformedPayload() throws Exception {
-        OpenAiChatClient chatClient = mock(OpenAiChatClient.class);
+        GeminiChatClient chatClient = mock(GeminiChatClient.class);
         when(chatClient.completeJson(anyString(), anyString())).thenReturn(mapper.readTree("""
                 { "matchPercentage": 60 }
                 """));
-        OpenAiMatchSummariser summariser = new OpenAiMatchSummariser(chatClient, fallback);
+        GeminiMatchSummariser summariser = new GeminiMatchSummariser(chatClient, fallback);
 
         ScreeningCompletedEvent result = summariser.summarise(event());
 

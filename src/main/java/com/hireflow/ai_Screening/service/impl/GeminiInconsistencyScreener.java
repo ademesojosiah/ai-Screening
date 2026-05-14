@@ -3,7 +3,7 @@ package com.hireflow.ai_Screening.service.impl;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hireflow.ai_Screening.event.ApplicationSubmittedEvent;
 import com.hireflow.ai_Screening.event.InconsistencyReviewCompletedEvent;
-import com.hireflow.ai_Screening.restclient.OpenAiChatClient;
+import com.hireflow.ai_Screening.restclient.GeminiChatClient;
 import com.hireflow.ai_Screening.service.InconsistencyScreener;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,13 +16,13 @@ import java.util.Set;
 @Primary
 @Service
 @RequiredArgsConstructor
-public class OpenAiInconsistencyScreener implements InconsistencyScreener {
+public class GeminiInconsistencyScreener implements InconsistencyScreener {
 
     private static final Set<String> ALLOWED_SEVERITY = Set.of("LOW", "MEDIUM", "HIGH");
 
     private static final String SYSTEM_PROMPT = """
             You detect inconsistencies between an applicant's claimed skills and their resume summary.
-            Use ONLY the resume summary as evidence — do NOT request, infer, or evaluate technical question answers.
+            Use ONLY the resume summary as evidence - do NOT request, infer, or evaluate technical question answers.
             Q&A is reserved for human reviewers and is intentionally not provided.
             Do NOT recommend rejection. Inconsistency is a review flag, not a rejection rule.
             Reply with ONLY a JSON object using exactly these keys:
@@ -33,30 +33,30 @@ public class OpenAiInconsistencyScreener implements InconsistencyScreener {
               "recommendedHumanReviewAction" (short imperative action for HR, max 300 chars).
             """;
 
-    private final OpenAiChatClient chatClient;
+    private final GeminiChatClient chatClient;
     private final BasicInconsistencyScreener fallback;
 
     @Override
     public InconsistencyReviewCompletedEvent detect(ApplicationSubmittedEvent event) {
         try {
-            String userPrompt = OpenAiPromptFactory.jobContext(event)
-                    + OpenAiPromptFactory.applicantContext(event);
+            String userPrompt = GeminiPromptFactory.jobContext(event)
+                    + GeminiPromptFactory.applicantContext(event);
 
             JsonNode root = chatClient.completeJson(SYSTEM_PROMPT, userPrompt);
-            Integer aiScore = OpenAiResponseSupport.clampedScore(root, "score");
-            String severity = OpenAiResponseSupport.requireText(root, "severity").toUpperCase();
+            Integer aiScore = GeminiResponseSupport.clampedScore(root, "score");
+            String severity = GeminiResponseSupport.requireText(root, "severity").toUpperCase();
             if (!ALLOWED_SEVERITY.contains(severity)) {
-                throw new IllegalArgumentException("Unknown severity from OpenAI: " + severity);
+                throw new IllegalArgumentException("Unknown severity from AI provider: " + severity);
             }
-            String explanation = OpenAiResponseSupport.requireText(root, "explanation");
-            String review = OpenAiResponseSupport.requireText(root, "review");
-            String action = OpenAiResponseSupport.requireText(root, "recommendedHumanReviewAction");
+            String explanation = GeminiResponseSupport.requireText(root, "explanation");
+            String review = GeminiResponseSupport.requireText(root, "review");
+            String action = GeminiResponseSupport.requireText(root, "recommendedHumanReviewAction");
 
             return new InconsistencyReviewCompletedEvent(
                     event.getApplicationId(), aiScore, severity, explanation, review, action
             );
         } catch (Exception ex) {
-            log.warn("Inconsistency review OpenAI call failed for {} — falling back to deterministic scoring: {}",
+            log.warn("Inconsistency review AI provider call failed for {} - falling back to deterministic scoring: {}",
                     event.getApplicationId(), ex.getMessage());
             return fallback.detect(event);
         }

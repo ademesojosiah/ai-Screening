@@ -53,11 +53,11 @@ class ResumeAnalysisConsumerTest {
     @DisplayName("Should propagate screener exceptions so the container error handler can retry")
     void consumeShouldPropagateScreenerException() {
         ApplicationSubmittedEvent event = submittedEvent();
-        when(resumeAnalysisScreener.analyze(event)).thenThrow(new RuntimeException("OpenAI timeout"));
+        when(resumeAnalysisScreener.analyze(event)).thenThrow(new RuntimeException("Gemini timeout"));
 
         assertThatThrownBy(() -> consumer.consume(event))
                 .isInstanceOf(RuntimeException.class)
-                .hasMessage("OpenAI timeout");
+                .hasMessage("Gemini timeout");
 
         verifyNoInteractions(kafkaTemplate);
     }
